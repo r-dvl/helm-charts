@@ -89,11 +89,19 @@ resources: {}
 livenessProbe:
   httpGet:
     path: /
-    port: http
+    port: 14333
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  failureThreshold: 3
 readinessProbe:
   httpGet:
     path: /
-    port: http
+    port: 14333
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 10
+  failureThreshold: 3
+  successThreshold: 1
 
 #This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
 autoscaling:
@@ -104,17 +112,16 @@ autoscaling:
   # targetMemoryUtilizationPercentage: 80
 
 # Additional volumes on the output Deployment definition.
-volumes: []
-# - name: foo
-#   secret:
-#     secretName: mysecret
-#     optional: false
+volumes:
+  - name: config-volume
+    hostPath:
+      path: /DATA/AppData/cloudflared/config
+      type: DirectoryOrCreate
 
 # Additional volumeMounts on the output Deployment definition.
-volumeMounts: []
-# - name: foo
-#   mountPath: "/etc/foo"
-#   readOnly: true
+volumeMounts:
+  - name: config-volume
+    mountPath: /config
 
 nodeSelector: {}
 
