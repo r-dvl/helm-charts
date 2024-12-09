@@ -1,4 +1,4 @@
-# Default values for calibre-web.
+# Default values for jellyfin.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
@@ -7,7 +7,7 @@ replicaCount: 1
 
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 image:
-  repository: linuxserver/calibre-web
+  repository: linuxserver/jellyfin
   # This sets the pull policy for images.
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
@@ -32,8 +32,9 @@ serviceAccount:
   name: ""
 
 # This is for setting Kubernetes Annotations to a Pod.
-# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
-podAnnotations: {}
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/ 
+podAnnotations:
+  hostname: jellyfin.rdvl.net
 # This is for setting Kubernetes Labels to a Pod.
 # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
 podLabels: {}
@@ -52,9 +53,10 @@ securityContext: {}
 # This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
 service:
   # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
-  type: ClusterIP
+  type: LoadBalancer
   # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
-  port: 8083
+  port: 8096
+  targetPort: 31956
 
 # This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
 ingress:
@@ -64,12 +66,12 @@ ingress:
     kubernetes.io/ingress.class: traefik
     # kubernetes.io/tls-acme: "true"
   hosts:
-    - host: calibre.rdvl.local
+    - host: jellyfin.rdvl.local
       paths:
         - path: /
           pathType: Prefix
 
-    - host: calibre.rdvl.net
+    - host: jellyfin.rdvl.net
       paths:
         - path: /
           pathType: Prefix
@@ -98,25 +100,16 @@ autoscaling:
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
+# Additional volumes on the output Deployment definition.
 volumes:
+  - name: config-volume
+    hostPath:
+      path: /DATA/AppData/jellyfin/config
+      type: DirectoryOrCreate
   - name: data-volume
     hostPath:
-      path: /DATA/Media/Books
+      path: /DATA/Media/
       type: DirectoryOrCreate
-  - name: config-volume
-    persistentVolumeClaim:
-      claimName: calibre-web-pvc
-
-volumeMounts:
-  - name: data-volume
-    mountPath: /books
-  - name: config-volume
-    mountPath: /config
-
-persistentVolumeClaim:
-  enabled: true
-  name: calibre-web-pvc
-  size: 1Gi
 
 env:
   - name: PUID
@@ -125,8 +118,15 @@ env:
     value: "0"
   - name: TZ
     value: "Europe/Madrid"
-  - name: DOCKER_MODS
-    value: "ghcr.io/linuxserver/mods:universal-calibre"
+  - name: JELLYFIN_PublishedServerUrl
+    value: "192.168.1.231"
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts:
+  - name: config-volume
+    mountPath: /config
+  - name: data-volume
+    mountPath: /Media
 
 nodeSelector:
   node-role.kubernetes.io/master: "true"
